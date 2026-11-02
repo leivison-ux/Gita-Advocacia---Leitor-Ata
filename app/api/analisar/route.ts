@@ -5,7 +5,8 @@ import {Analysis,Act,parseISO} from '../../../lib/calendar';
 import {renderReport} from '../../../lib/report';
 import {improveExtraction} from '../../../lib/quality';
 export const runtime='nodejs';
-export const maxDuration=60;
+// Requer Fluid Compute ativo na Vercel (Hobby permite ate 300 segundos).
+export const maxDuration=240;
 const MAX_BYTES=12*1024*1024;
 function err(message:string,code=400){return NextResponse.json({error:message},{status:code});}
 const categories=new Set(['1','4','6','7','8','9','OUTROS','ACORDO','AUDIENCIA','JULGAMENTO']);
@@ -32,13 +33,14 @@ export async function POST(req:NextRequest){
  if(f instanceof File&&f.size){if(f.size>MAX_BYTES)return err('PDF acima de 12 MB.',413);if(!f.name.toLowerCase().endsWith('.pdf'))return err('Envie somente arquivos PDF.');const b=Buffer.from(await f.arrayBuffer());if(b.subarray(0,5).toString()!=='%PDF-')return err('PDF inválido.');const parser=(await import('pdf-parse')).default;const parsed=await parser(b);ata=String(parsed.text||'').trim();if(ata.length<120&&!pasted)return err('PDF sem texto selecionável; cole o texto ou faça OCR.');}
  if(pasted)ata=ata?`${ata}\n\nTEXTO COMPLEMENTAR:\n${pasted}`:pasted;
  if(ata.length<80)return err('Inclua uma ata com pelo menos 80 caracteres.');if(ata.length>100000)return err('Envie uma ata por vez (máximo 100 mil caracteres).',413);
- const model=process.env.OPENAI_MODEL||'gpt-6-luna';const client=new OpenAI({apiKey:process.env.OPENAI_API_KEY,timeout:52000,maxRetries:0});
+ const model=process.env.OPENAI_MODEL||'gpt-6-luna';const client=new OpenAI({apiKey:process.env.OPENAI_API_KEY,timeout:210000,maxRetries:0});
  const response=await client.responses.create({model,instructions:EXTRACTION_PROMPT,input:[{role:'user',content:`Responda exclusivamente em formato JSON válido, conforme as instruções. EXTRAIA OS DADOS DA ATA ABAIXO, SEM CALCULAR DATAS:\n${ata}`}],max_output_tokens:8500,store:false,text:{format:{type:'json_object'}}});
  const result=response.output_text?.trim();if(!result)return err('A IA não retornou dados. Verifique limite de tokens e logs.',502);
  let parsed:unknown;try{parsed=JSON.parse(result);}catch{console.error('analisar: JSON inválido ou truncado');return err('A IA retornou dados incompletos. Refaça a análise ou altere o modelo.',502);}
  const analysis=improveExtraction(validate(parsed),ata);const report=renderReport(analysis);
  return NextResponse.json({...report,modelo:model,usage:response.usage,avisos:[...report.avisos,'Atenção: conferir prazos e suspensões locais no PJe.']},{headers:{'Cache-Control':'no-store'}});
  }catch(e){const message=e instanceof Error?e.message:'Erro desconhecido';console.error('analisar:',message);
+ if(/Request timed out|timed out|timeout|ETIMEDOUT|AbortError/i.test(message))return err('A OpenAI nao concluiu a analise no tempo disponivel. Verifique se Fluid Compute esta ativado na Vercel e tente novamente; se persistir, experimente um modelo mais rapido.',504);
  if(/model_not_found|does not exist|access to model|unsupported model/i.test(message))return err('Modelo indisponível. Configure OPENAI_MODEL para um modelo habilitado.',422);
  if(/insufficient_quota|quota/i.test(message))return err('Sem crédito ou cota disponível na API.',429);
  if(/invalid_api_key|Incorrect API key|401/i.test(message))return err('OPENAI_API_KEY inválida.',401);
