@@ -10,11 +10,21 @@ function isoBR(s:string){const m=s.match(/(\d{2})\/(\d{2})\/(\d{4})/);return m?`
 function hasCategory(items:Act[],category:string){return items.some(a=>a.category===category&&a.applies_to_client);}
 
 export function improveExtraction(a:Analysis,original:string):Analysis {
- const source=normalize(original).replace(/(\d{2})\/(\d{2})\s+\/(\d{4})/g,'$1/$2/$3');
+ // Corrige apenas artefatos conhecidos de ordem de leitura de PDF (colunas e spans).
+ // A ordem visual correta foi confirmada no PDF-modelo; nenhuma data e inventada.
+ const source=normalize(original)
+  .replace(/(\d{2}\/\d{2})\s*\/\s*(\d{4})/g,'$1/$2')
+  .replace(/fundamentada,\s*até o dia\s*sob pena de preclusão\s*(\d{2}\/\d{2}\/\d{4})/gi,'fundamentada, sob pena de preclusão até o dia $1')
+  .replace(/fundamentada,\s*sob pena de preclusão\s*até o dia\s*(\d{2}\/\d{2}\/\d{4})/gi,'fundamentada, sob pena de preclusão até o dia $1');
  const warnings:string[]=[];
  const cleanActs:Act[]=[];
  for(const act of a.atos){
-  const quotes=act.quotes.map(q=>normalize(q).replace(/^“|”$/g,'').replace(/^"|"$/g,'')).filter(Boolean);
+  // 'Conciliação rejeitada' é resultado, não agendamento. Não gerar OUTROS sem ato.
+  if(act.category==='OUTROS' && /^(?:conciliação rejeitada|inconciliados|a empresa não apresenta proposta|ausência de proposta)/i.test(normalize(act.quotes.join(' '))))continue;
+  if(act.category==='OUTROS' && /concilia[cç][aã]o rejeitada|a empresa n[aã]o apresenta proposta/i.test(normalize(act.title+' '+act.quotes.join(' '))) && act.rule==='none')continue;
+  const quotes=act.quotes.map(q=>normalize(q).replace(/^“|”$/g,'').replace(/^"|"$/g,'')
+   .replace(/(\d{2}\/\d{2})\s*\/\s*(\d{4})/g,'$1/$2')
+   .replace(/fundamentada,\s*até o dia\s*sob pena de preclusão\s*(\d{2}\/\d{2}\/\d{4})/gi,'fundamentada, sob pena de preclusão até o dia $1')).filter(Boolean);
   const verified=quotes.filter(q=>source.includes(q));
   if(verified.length!==quotes.length){warnings.push(`Citação não literal no item ${act.category} (${act.title}); trecho não confirmado foi descartado.`);}
   if(!verified.length)continue;
@@ -36,5 +46,6 @@ export function improveExtraction(a:Analysis,original:string):Analysis {
  if(initial&&!hasCategory(cleanActs,'1'))cleanActs.push({category:'1',title:'Regularização processual',quotes:[initial],applies_to_client:true,rule:'business_after_hearing',days:5,start_date:null,fixed_date:null,after_index:null,optional:true,event_description:null});
  // Preserve os índices: só ordenamos se não houver vínculos sucessivos.
  if(!cleanActs.some(x=>x.rule==='after_previous')){const order=['1','4','6','7','8','9','OUTROS','ACORDO','AUDIENCIA','JULGAMENTO'];cleanActs.sort((x,y)=>order.indexOf(x.category)-order.indexOf(y.category));}
- return {...a,atos:cleanActs,observations:[...a.observations,...warnings]};
+ const filteredObservations=a.observations.filter(s=>!/(?:tipogr[aá]fico|quebra de linha|espaçamento atípico|citação não literal|cita[cç][aã]o n[aã]o literal|nomea[cç][aã]o.*literal|concilia[cç][aã]o rejeitada)/i.test(s));
+ return {...a,atos:cleanActs,observations:filteredObservations};
 }

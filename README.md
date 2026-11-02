@@ -34,3 +34,7 @@ A leitura de PDFs digitalizados exige OCR externo. O sistema não faz pesquisa d
 - Item 6 usa a data de entrega do laudo como referência quando a designação não fixa vencimento próprio.
 - Item 9 tem subtítulos de impugnação e esclarecimentos e utiliza o primeiro dia útil após o marco anterior.
 - Item 7 permanece ausente quando a ata não fixa quesitos, assistentes ou outras providências periciais da parte.
+
+
+## Correção 3.2
+Recupera marcos 6/8/9 da perícia contábil mesmo com quebras de linha e ordem de texto defeituosa no PDF; elimina conciliação rejeitada dos agendamentos; impede avisos de extração espúrios quando o trecho é validado. Validar conferência com a ata original.

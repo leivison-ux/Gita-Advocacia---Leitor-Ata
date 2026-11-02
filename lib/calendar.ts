@@ -41,19 +41,7 @@ export function computeAnalysis(a:Analysis){const alerts:string[]=[];const compu
    if(act.category==='9'&&act.rule==='fixed') {
     // Acompanhamento do laudo: comece no primeiro dia útil após o marco
     // anterior expresso (entrega de laudo, impugnação, esclarecimentos).
-    
-   const previous = computed
-     .filter(
-        (x) =>
-          (x.category === "8" || x.category === "9") &&
-           x.dateFatal !== null &&
-           x.dateFatal < (fatal ?? "9999-12-31")
-          )
-          .sort((x, y) =>
-            (x.dateFatal ?? "").localeCompare(y.dateFatal ?? "")
-            )
-      .at(-1);
-
+    const previous=computed.filter(x=>(x.category==='8'||x.category==='9')&&x.dateFatal&&x.dateFatal<fatal).sort((x,y)=>x.dateFatal!.localeCompare(y.dateFatal!)).at(-1);
     if(previous?.dateFatal)datePrazo=nextBusiness(previous.dateFatal);
     else if(act.start_date)datePrazo=adjustBusiness(act.start_date);
    }
