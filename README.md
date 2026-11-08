@@ -1,4 +1,4 @@
-# Gitaí Leitor de Atas — V5 (Vercel)
+# Gitaí Leitor de Atas — V5.1 (Vercel)
 
 Projeto Next.js baseado no fluxo estruturado da V4.1, com a **interface visual aprovada**: cabeçalho azul, acesso por senha na mesma página, área vermelha de upload de PDF com borda tracejada e **arrastar/soltar**, campo para colar texto, controles de limpeza e relatório jurídico completo.
 
@@ -45,3 +45,13 @@ Não foi executado um build Next.js completo com `npm install` nem chamadas reai
 ## Endpoint de versão
 
 `GET /api/versao` retorna o identificador do deploy; se a aplicação exibir versão diferente, a Vercel ainda não está executando esta versão.
+
+## Correção V5.1: "Citação ausente no ato 5"
+
+A API antiga rejeitava toda a resposta quando qualquer ato apresentava `quotes: []`, inclusive o item 9, que pode ser uma observação legítima sem citação literal. A V5.1 aceita esse caso como **observação sem prazo** e mantém a análise. Para os demais atos sem qualquer citação, a V5.1 não fabrica texto nem autoriza prazo não comprovado: registra um aviso explícito de conferência no resultado. A rotina de perícia continua a reconciliar os itens 6, 8 e 9 com o texto original do PDF.
+
+**Verificação:** após o deploy, consulte `/api/versao`: `5.1.0-correcao-citacoes`.
+
+**Teste de regressão:** `npm run test:validacao`. Também execute `npm run test:dates` e `npm run test:pericia`.
+
+Faça um novo deploy a partir do código atualizado; modificar somente variáveis de ambiente não corrige a versão em execução.

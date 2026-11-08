@@ -19,7 +19,7 @@ export default function Home(){
  function exportPdf(){window.print();}
  async function copy(){if(!out)return;try{await navigator.clipboard.writeText(out.resultado);setCopied(true);}catch{setError('Não foi possível copiar; selecione o texto manualmente.');}}
  return <div className="page-shell">
-  <header className="site-header"><div className="head-inner"><div className="brandmark">⚖</div><div className="brandname">Gitaí</div><div className="brandline"/><div className="branddesc"><h1>Leitor de Atas</h1><span>Controladoria Jurídica · SODEXO · FORTBRAS · CARREFOUR · WMS</span></div><div className="head-actions"><span className="version-pill">V5 · Interface renovada</span></div></div></header>
+  <header className="site-header"><div className="head-inner"><div className="brandmark">⚖</div><div className="brandname">Gitaí</div><div className="brandline"/><div className="branddesc"><h1>Leitor de Atas</h1><span>Controladoria Jurídica · SODEXO · FORTBRAS · CARREFOUR · WMS</span></div><div className="head-actions"><span className="version-pill">V5.1 · Citações corrigidas</span></div></div></header>
   <main className="content-shell">
    <section className="workspace-card">
     <aside className="left-rail">
