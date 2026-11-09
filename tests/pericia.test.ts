@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {reconcilePericia} from '../lib/pericia.ts';
+import {renderReport} from '../lib/report.ts';
+import type {Analysis,Act} from '../lib/calendar.ts';
+const quote='Diante da alegação de doença ocupacional, reputa-se imprescindível a realização da prova técnica, ficando desde já nomeado o perito Marcelo de Aguiar Batista Sapucaia, que deverá informar no prazo de 10 dias a data de realização da consulta médica pericial, e entregar o seu estudo técnico no prazo de 45 dias úteis após a diligência.';
+const act:Act={category:'7',title:'Quesitos',quotes:['Concedo às partes o prazo de 10 dias úteis, a fluir de 09/11/2026, para apresentação de assistentes técnicos e quesitos.'],applies_to_client:true,rule:'business_from_date',days:10,start_date:'2026-11-09',fixed_date:null,after_index:null,optional:false,event_description:null};
+const a:Analysis={processo:'0000744-09.2026.5.05.0102',reclamante:'ADRIANA',cliente:'SODEXO',posicao:'Reclamada',outras_partes:'',orgao:'2ª VT Simões Filho',audiencia:'2026-11-04',resultado:'',observations:[],atos:[act]};
+const audit=reconcilePericia(a,quote);assert.deepEqual(audit.added,['6','8','9']);
+const output=renderReport(a).resultado;
+for(const h of ['### 6 - AGENDAMENTO DE PERÍCIA','### 7 - PERÍCIA','### 8 - LAUDO - AO ANALISTA','### 9 - LAUDO - AO ADV'])assert.ok(output.includes(h),h);
+assert.ok(output.includes('Data prazo: 23/11/2026 (acompanhar) - Data fatal: a apurar após a realização da perícia.'));
+assert.ok(output.includes('Data prazo: 06/11/2026 - Data fatal: 23/11/2026'));
+assert.deepEqual(reconcilePericia(a,quote).added,[]);
+console.log('Teste pericial: OK');
